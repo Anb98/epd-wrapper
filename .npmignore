@@ -1,8 +1,0 @@
-# Source files
-src/
-
-# TS configuration
-tsconfig.json
-
-# Node modules
-node_modules/
