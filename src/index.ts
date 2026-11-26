@@ -45,6 +45,7 @@ export class EPDWrapper {
   private _stopping = false;
   private LOG_ENABLED: boolean;
   private DEBUG_ENABLED: boolean;
+  private ROTATE: number;
   private log(...args: unknown[]) {
     if (this.LOG_ENABLED) console.log(...args);
   }
@@ -71,10 +72,22 @@ export class EPDWrapper {
       "lib",
       "epd_bridge.py"
     ),
-    options: { log?: boolean; debug?: boolean } = {}
+    options: {
+      log?: boolean;
+      debug?: boolean;
+      /** Turns every image after it is fitted to the panel: 0 (default) or 180. Other values throw. */
+      rotate?: number;
+    } = {}
   ) {
     this.LOG_ENABLED = options.log !== undefined ? options.log : true;
     this.DEBUG_ENABLED = !!options.debug;
+    const rotate = options.rotate ?? 0;
+    if (rotate !== 0 && rotate !== 180) {
+      throw new Error(
+        `Invalid rotate option: ${rotate}. Allowed values: 0, 180.`
+      );
+    }
+    this.ROTATE = rotate;
     this.readyPromise = new Promise((resolve) => {
       this.readyResolve = resolve;
     });
@@ -103,6 +116,8 @@ export class EPDWrapper {
             scriptDir +
             (process.env.PYTHONPATH ? `:${process.env.PYTHONPATH}` : ""),
           PYTHONUNBUFFERED: "1",
+          // Read by epd_bridge.py and applied in EPD.getbuffer
+          EPD_WRAPPER_ROTATE: String(this.ROTATE),
         },
         // Execute the script from its own directory
         cwd: scriptDir,

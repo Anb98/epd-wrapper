@@ -84,7 +84,8 @@ class EPDBridge:
     def _init(self):
         """Initialize the EPD display"""
         if self.epd is None:
-            self.epd = EPD()
+            # Set by EPDWrapper at spawn time from its `rotate` option
+            self.epd = EPD(rotate=int(os.environ.get('EPD_WRAPPER_ROTATE', '0')))
         
         result = self.epd.init()
         if result == 0:

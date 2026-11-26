@@ -75,14 +75,14 @@ npm install epd-wrapper
 
 The following example demonstrates the proper lifecycle: starting the bridge, initializing the display, fetching an image from a URL, displaying it, and safely stopping the bridge.
 
-**Important:** The display's resolution is **640x400 pixels**. Ensure the image you use matches this size.
+**Important:** The panel is **400x600 pixels** (portrait). Send a **400x600** image to use it vertically or a **600x400** image to use it horizontally. Other sizes are not supported. See [Orientation](#orientation).
 
 ```typescript
 // example.ts
 import { EPDWrapper } from 'epd-wrapper';
 
-// A direct link to a 640x400 image
-const imageUrl = 'https://picsum.photos/640/400';
+// A direct link to a 600x400 image (horizontal)
+const imageUrl = 'https://picsum.photos/600/400';
 
 async function main() {
   const epd = new EPDWrapper();
@@ -95,7 +95,7 @@ async function main() {
 
     console.log('Initializing display...');
     const info = await epd.init();
-    console.log('Display initialized:', info); // { width: 640, height: 400 }
+    console.log('Display initialized:', info); // { width: 400, height: 600 }
 
     console.log(`Fetching image from ${imageUrl}...`);
     const response = await fetch(imageUrl);
@@ -135,6 +135,26 @@ async function main() {
 main();
 ```
 
+### Orientation
+
+Two settings give the four ways to mount the panel: the **size of the image** you send, and the **`rotate`** option (since 1.1.0).
+
+| Mounting | Image sent | `rotate` |
+| --- | --- | --- |
+| Vertical, upright | 400x600 | `0` (default) |
+| Vertical, upside down | 400x600 | `180` |
+| Horizontal | 600x400 | `0` (default) |
+| Horizontal, upside down | 600x400 | `180` |
+
+```typescript
+// Panel mounted upside down
+const epd = new EPDWrapper(undefined, undefined, { rotate: 180 });
+```
+
+-   `rotate` turns the image after it has been fitted to the panel, so `displayImage`, `displayBuffer`, `displayCustom`, `drawText` and `drawShapes` all honour it.
+-   **To switch between vertical and horizontal, change the image size**, not `rotate`.
+-   **Why not 90 or 270?** The panel is not square. A 600x400 image is already turned 90° to fit the 400x600 panel; turning that result another 90° gives 600x400 again, which does not fit. Any value other than `0` or `180` throws.
+
 ---
 
 ## 4. Display Update Cycle and Recommendations
@@ -166,7 +186,9 @@ Creates a new instance of the E-Paper Display controller. All arguments are opti
 
 -   `pythonPath`: Path to the python executable (defaults to `python3`).
 -   `bridgeScript`: Path to the `epd_bridge.py` script.
--   `options`: `{ log?: boolean; debug?: boolean; }` to control console output.
+-   `options`:
+    -   `log?: boolean`, `debug?: boolean`: control console output.
+    -   `rotate?: 0 | 180` (since 1.1.0): turn every image 180° for a panel mounted upside down. Defaults to `0`; any other value throws. See [Orientation](#orientation).
 
 ### `async epd.start(): Promise<void>`
 
@@ -178,11 +200,11 @@ Initializes the e-paper hardware. Must be called after `start()` or to wake the 
 
 ### `async epd.displayImage(imagePath: string): Promise<void>`
 
-Displays an image on the screen from a file path. The image should be 640x400.
+Displays an image on the screen from a file path. The image should be 400x600 or 600x400 (see [Orientation](#orientation)).
 
 ### `async epd.displayBuffer(imageBuffer: Buffer): Promise<void>`
 
-Displays an image from a raw image buffer. The image should be 640x400.
+Displays an image from a raw image buffer. The image should be 400x600 or 600x400 (see [Orientation](#orientation)).
 
 ### `async epd.clear(): Promise<void>`
 

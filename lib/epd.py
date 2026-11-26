@@ -42,7 +42,8 @@ EPD_HEIGHT      = 600
 logger = logging.getLogger(__name__)
 
 class EPD:
-    def __init__(self):
+    def __init__(self, rotate=0):
+        self.rotate = rotate    # 0 or 180, applied in getbuffer after the fit
         self.reset_pin = epdconfig.RST_PIN
         self.dc_pin = epdconfig.DC_PIN
         self.busy_pin = epdconfig.BUSY_PIN
@@ -198,6 +199,11 @@ class EPD:
 
         # Convert the soruce image to the 7 colors, dithering if needed
         image_6color = image_temp.convert("RGB").quantize(palette=pal_image)
+
+        # Turn the fitted image upside down for a panel mounted the other way.
+        # Done after quantize so the result is exactly the rotate=0 output turned 180°.
+        if self.rotate == 180:
+            image_6color = image_6color.rotate(180)
         buf_6color = bytearray(image_6color.tobytes('raw'))
 
         # PIL does not support 4 bit color, so pack the 4 bits of color
