@@ -153,7 +153,6 @@ const epd = new EPDWrapper(undefined, undefined, { rotate: 180 });
 
 -   `rotate` turns the image after it has been fitted to the panel, so `displayImage`, `displayBuffer`, `displayCustom`, `drawText` and `drawShapes` all honour it.
 -   **To switch between vertical and horizontal, change the image size**, not `rotate`.
--   **Why not 90 or 270?** The panel is not square. A 600x400 image is already turned 90° to fit the 400x600 panel; turning that result another 90° gives 600x400 again, which does not fit. Any value other than `0` or `180` throws.
 
 ---
 
