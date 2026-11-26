@@ -81,7 +81,7 @@ export class EPDWrapper {
       options.bridgeScript ?? join(__dirname, "..", "lib", "epd_bridge.py");
     this.LOG_ENABLED = options.log !== undefined ? options.log : true;
     this.DEBUG_ENABLED = !!options.debug;
-    const rotate = options.rotate ?? 0;
+    const rotate = options.rotate === undefined ? 0 : options.rotate;
     if (rotate !== 0 && rotate !== 180) {
       throw new Error(
         `Invalid rotate option: ${rotate}. Allowed values: 0, 180.`
