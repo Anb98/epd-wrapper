@@ -45,7 +45,7 @@ export class EPDWrapper {
   private _stopping = false;
   private LOG_ENABLED: boolean;
   private DEBUG_ENABLED: boolean;
-  private ROTATE: number;
+  private ROTATE: 0 | 180;
   private log(...args: unknown[]) {
     if (this.LOG_ENABLED) console.log(...args);
   }
@@ -77,8 +77,8 @@ export class EPDWrapper {
       log?: boolean;
       /** Debug output. Defaults to `false`. */
       debug?: boolean;
-      /** Turns every image after it is fitted to the panel: 0 (default) or 180. Other values throw. */
-      rotate?: number;
+      /** Turns every image after it is fitted to the panel. Defaults to 0. Other values throw at runtime. */
+      rotate?: 0 | 180;
     } = {}
   ) {
     // Fail loudly for 1.x callers instead of silently ignoring their positional arguments
