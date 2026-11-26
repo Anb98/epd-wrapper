@@ -195,7 +195,7 @@ class EPD:
         elif(imwidth == self.height and imheight == self.width):
             image_temp = image.rotate(90, expand=True)
         else:
-            logger.warning("Invalid image dimensions: %d x %d, expected %d x %d" % (imwidth, imheight, self.width, self.height))
+            raise ValueError("Image must be %dx%d or %dx%d, got %dx%d" % (self.width, self.height, self.height, self.width, imwidth, imheight))
 
         # Convert the soruce image to the 7 colors, dithering if needed
         image_6color = image_temp.convert("RGB").quantize(palette=pal_image)

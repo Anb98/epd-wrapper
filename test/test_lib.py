@@ -1,7 +1,7 @@
-"""Check that getbuffer(rotate=180) is the 180-degree turn of getbuffer(rotate=0).
+"""Checks for lib/epd.py getbuffer.
 
 No hardware needed: epdconfig (SPI/GPIO) is stubbed. Needs Pillow.
-Run: python3 test/test_rotation.py
+Run: python3 test/test_lib.py
 """
 import os
 import sys
@@ -33,4 +33,13 @@ for width, height in ((400, 600), (600, 400)):
 
     assert turned != upright, f"{width}x{height}: rotate=180 changed nothing"
     assert turned == upright[::-1], f"{width}x{height}: rotate=180 is not a 180-degree turn"
-    print(f"ok {width}x{height}")
+    print(f"ok rotate 180 on {width}x{height}")
+
+# Any other size is rejected with a clear message.
+try:
+    EPD().getbuffer(Image.new("RGB", (640, 400)))
+except ValueError as e:
+    assert str(e) == "Image must be 400x600 or 600x400, got 640x400", e
+else:
+    raise AssertionError("a 640x400 image was accepted")
+print("ok 640x400 rejected")
