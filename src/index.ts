@@ -38,7 +38,6 @@ export class EPDWrapper {
   > = new Map();
   private commandId = 0;
   private ready = false;
-  private readyPromise: Promise<void>;
   private readyResolve!: () => void;
   private errorBuffer: string = ""; // Accumulated stderr output buffer
   private readonly errorBufferMax = 8192; // Maximum retained stderr buffer size
@@ -99,9 +98,6 @@ export class EPDWrapper {
       );
     }
     this.ROTATE = rotate;
-    this.readyPromise = new Promise((resolve) => {
-      this.readyResolve = resolve;
-    });
   }
 
   /**
@@ -115,6 +111,15 @@ export class EPDWrapper {
     this.log("[EPD] Starting Python bridge...");
 
     return new Promise((resolve, reject) => {
+      this._stopping = false;
+      // Called by handleResponse when this bridge sends its "ready" message
+      this.readyResolve = () => {
+        this.ready = true;
+        this.errorBuffer = ""; // Clear error buffer if startup succeeded
+        this.log("[EPD] Bridge started and ready.");
+        resolve();
+      };
+
       // Get the directory of the bridge script
       const scriptDir = dirname(this.bridgeScript);
 
@@ -185,17 +190,6 @@ export class EPDWrapper {
           this.commandQueue.clear();
         }
       });
-
-      // Wait until the bridge signals readiness
-      this.readyPromise
-        .then(() => {
-          this.ready = true;
-          this.errorBuffer = ""; // Clear error buffer if startup succeeded
-          this.log("[EPD] Bridge started and ready.");
-
-          resolve();
-        })
-        .catch(reject); // Propagate errors if 'readyPromise' is rejected
     });
   }
 
@@ -204,28 +198,35 @@ export class EPDWrapper {
    */
   async stop(): Promise<void> {
     this.log("[EPD] Stopping bridge...");
-    if (this.pythonProcess) {
-      // Attempt to put the display to sleep first
-      if (this.ready) {
-        try {
-          await this.sleep();
-        } catch (error) {
-          this.warn(
-            `Failed to put EPD to sleep before stopping: ${this.formatErr(
-              error
-            )}`
-          );
-        }
-      }
-
-      this._stopping = true;
-      this.pythonProcess.kill(); // SIGTERM
-      this.pythonProcess = null;
-      this.ready = false;
-      this.log("[EPD] Bridge stopped.");
-    } else {
+    const proc = this.pythonProcess;
+    if (!proc) {
       this.log("[EPD] Bridge was already stopped.");
+      return;
     }
+    // The "close" handler from start() clears pythonProcess and ready
+    const exited = new Promise((resolve) => proc.once("close", resolve));
+
+    // Attempt to put the display to sleep first
+    if (this.ready) {
+      try {
+        await this.sleep();
+      } catch (error) {
+        this.warn(
+          `Failed to put EPD to sleep before stopping: ${this.formatErr(
+            error
+          )}`
+        );
+      }
+    }
+
+    this._stopping = true;
+    // EOF ends the bridge loop; SIGTERM alone does not (the bridge only flags it)
+    proc.stdin?.end();
+    // ponytail: fixed 5 s before a hard kill; make it an option if a bridge needs longer to exit
+    const killTimer = setTimeout(() => proc.kill("SIGKILL"), 5000);
+    await exited;
+    clearTimeout(killTimer);
+    this.log("[EPD] Bridge stopped.");
   }
 
   /**

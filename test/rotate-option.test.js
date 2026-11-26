@@ -50,6 +50,39 @@ test("log and debug are read from the options object", async () => {
   }
 });
 
+const isAlive = (pid) => {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+test("stop() ends the bridge process", async () => {
+  const epd = new EPDWrapper({ pythonPath: "python3", bridgeScript: fakeBridge, log: false });
+  await epd.start();
+  const pid = epd.pythonProcess.pid;
+  await epd.stop();
+  assert.strictEqual(isAlive(pid), false);
+});
+
+test("stop() then start() gives a working bridge", async () => {
+  const epd = new EPDWrapper({ pythonPath: "python3", bridgeScript: fakeBridge, log: false });
+  await epd.start();
+  const first = epd.pythonProcess.pid;
+  await epd.stop();
+  await epd.start();
+  // The previous bridge going away must not take the new one down with it.
+  if (isAlive(first)) process.kill(first, "SIGKILL");
+  await new Promise((resolve) => setTimeout(resolve, 200));
+  try {
+    assert.strictEqual((await epd.getInfo()).rotate, "0");
+  } finally {
+    await epd.stop();
+  }
+});
+
 test("the 1.x positional form throws", () => {
   for (const args of [["python3"], [undefined, undefined, { rotate: 180 }]]) {
     assert.throws(() => new EPDWrapper(...args), /takes a single options object/);
