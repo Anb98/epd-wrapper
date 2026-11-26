@@ -64,21 +64,32 @@ export class EPDWrapper {
     }
   }
 
+  private pythonPath: string;
+  private bridgeScript: string;
+
   constructor(
-    private pythonPath: string = "python3",
-    private bridgeScript: string = join(
-      __dirname,
-      "..",
-      "lib",
-      "epd_bridge.py"
-    ),
     options: {
+      /** Python executable. Defaults to `python3`. */
+      pythonPath?: string;
+      /** Path to `epd_bridge.py`. Defaults to the one shipped in `lib/`. */
+      bridgeScript?: string;
+      /** Console output. Defaults to `true`. */
       log?: boolean;
+      /** Debug output. Defaults to `false`. */
       debug?: boolean;
       /** Turns every image after it is fitted to the panel: 0 (default) or 180. Other values throw. */
       rotate?: number;
     } = {}
   ) {
+    // Fail loudly for 1.x callers instead of silently ignoring their positional arguments
+    if (arguments.length > 1 || typeof options !== "object" || options === null) {
+      throw new TypeError(
+        "EPDWrapper takes a single options object since 2.0.0: new EPDWrapper({ pythonPath, bridgeScript, log, debug, rotate })"
+      );
+    }
+    this.pythonPath = options.pythonPath ?? "python3";
+    this.bridgeScript =
+      options.bridgeScript ?? join(__dirname, "..", "lib", "epd_bridge.py");
     this.LOG_ENABLED = options.log !== undefined ? options.log : true;
     this.DEBUG_ENABLED = !!options.debug;
     const rotate = options.rotate ?? 0;

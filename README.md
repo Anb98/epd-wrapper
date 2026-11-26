@@ -137,7 +137,7 @@ main();
 
 ### Orientation
 
-Two settings give the four ways to mount the panel: the **size of the image** you send, and the **`rotate`** option (since 1.1.0).
+Two settings give the four ways to mount the panel: the **size of the image** you send, and the **`rotate`** option (since 2.0.0).
 
 | Mounting | Image sent | `rotate` |
 | --- | --- | --- |
@@ -148,7 +148,7 @@ Two settings give the four ways to mount the panel: the **size of the image** yo
 
 ```typescript
 // Panel mounted upside down
-const epd = new EPDWrapper(undefined, undefined, { rotate: 180 });
+const epd = new EPDWrapper({ rotate: 180 });
 ```
 
 -   `rotate` turns the image after it has been fitted to the panel, so `displayImage`, `displayBuffer`, `displayCustom`, `drawText` and `drawShapes` all honour it.
@@ -179,15 +179,23 @@ To ensure the longevity of the e-paper display and manage power correctly, follo
 
 ## 5. API Reference
 
-### `new EPDWrapper(pythonPath?, bridgeScript?, options?)`
+### `new EPDWrapper(options?)`
 
-Creates a new instance of the E-Paper Display controller. All arguments are optional.
+Creates a new instance of the E-Paper Display controller. Every option is optional; leave out the ones you don't need.
 
--   `pythonPath`: Path to the python executable (defaults to `python3`).
--   `bridgeScript`: Path to the `epd_bridge.py` script.
--   `options`:
-    -   `log?: boolean`, `debug?: boolean`: control console output.
-    -   `rotate?: 0 | 180` (since 1.1.0): turn every image 180° for a panel mounted upside down. Defaults to `0`; any other value throws. See [Orientation](#orientation).
+```typescript
+const epd = new EPDWrapper({ rotate: 180, log: false });
+```
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `pythonPath` | `"python3"` | Path to the Python executable. |
+| `bridgeScript` | bundled `lib/epd_bridge.py` | Path to the bridge script. |
+| `log` | `true` | Console output. |
+| `debug` | `false` | Debug output. |
+| `rotate` | `0` | `0` or `180`. Turns every image for a panel mounted upside down; any other value throws. See [Orientation](#orientation). |
+
+**Upgrading from 1.x:** the constructor now takes a single options object. Replace `new EPDWrapper(pythonPath, bridgeScript, { log, debug })` with `new EPDWrapper({ pythonPath, bridgeScript, log, debug })`. The old form no longer compiles in TypeScript and throws in JavaScript.
 
 ### `async epd.start(): Promise<void>`
 
