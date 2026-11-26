@@ -1,4 +1,4 @@
-"""Checks for lib/epd.py getbuffer.
+"""Checks for lib/epd.py getbuffer and the bridge's display command.
 
 No hardware needed: epdconfig (SPI/GPIO) is stubbed. Needs Pillow.
 Run: python3 test/test_lib.py
@@ -43,3 +43,15 @@ except ValueError as e:
 else:
     raise AssertionError("a 640x400 image was accepted")
 print("ok 640x400 rejected")
+
+# The bridge's "display" command (used by displayCustom) fills the panel with one colour.
+import epd_bridge  # noqa: E402
+
+bridge = epd_bridge.EPDBridge()
+bridge.epd, bridge.initialized = EPD(), True
+shown = []
+bridge.epd.display = shown.append  # capture the buffer instead of sending it over SPI
+result = bridge._display({"width": 600, "height": 400, "bgColor": "rgb(255,0,0)"})
+assert result == {"success": True}, result
+assert set(pixels(shown[0])) == {3}, "display rgb(255,0,0) is not solid red (palette index 3)"
+print("ok display rgb(255,0,0) is solid red")

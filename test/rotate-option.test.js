@@ -83,6 +83,18 @@ test("stop() then start() gives a working bridge", async () => {
   }
 });
 
+test("displayCustom asks the bridge to draw a solid colour", async () => {
+  const epd = new EPDWrapper({ log: false });
+  const sent = [];
+  epd.sendCommand = async (method, params) => {
+    sent.push({ method, params });
+  };
+  await epd.displayCustom(600, 400, { r: 255, g: 0, b: 0 });
+  assert.deepStrictEqual(sent, [
+    { method: "display", params: { width: 600, height: 400, bgColor: "rgb(255,0,0)" } },
+  ]);
+});
+
 test("the 1.x positional form throws", () => {
   for (const args of [["python3"], [undefined, undefined, { rotate: 180 }]]) {
     assert.throws(() => new EPDWrapper(...args), /takes a single options object/);

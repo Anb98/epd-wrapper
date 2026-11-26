@@ -1,15 +1,5 @@
 import { spawn, ChildProcess } from "child_process";
 import { join, dirname } from "path";
-// Lazy load sharp to reduce initial memory footprint
-let sharpModule: typeof import("sharp") | null = null;
-function getSharp(): typeof import("sharp") {
-  if (!sharpModule) {
-    // Deferred loading only when image manipulation is needed
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    sharpModule = require("sharp") as typeof import("sharp");
-  }
-  return sharpModule; // Guaranteed initialized above
-}
 
 interface EPDColors {
   BLACK: number;
@@ -381,20 +371,12 @@ export class EPDWrapper {
     height: number,
     color: { r: number; g: number; b: number } = { r: 255, g: 255, b: 255 }
   ): Promise<void> {
-    // Create a blank image
-    const sharpFn = getSharp();
-    const image = await sharpFn({
-      create: {
-        width,
-        height,
-        channels: 3,
-        background: color,
-      },
-    })
-      .png()
-      .toBuffer();
-
-    await this.displayBuffer(image);
+    // The bridge draws the solid image itself (Pillow parses "rgb(r,g,b)")
+    await this.sendCommand("display", {
+      width,
+      height,
+      bgColor: `rgb(${color.r},${color.g},${color.b})`,
+    });
   }
 
   /**
